@@ -2,6 +2,7 @@
 
 const User = require("./user.model");
 const Query = require("./query.model");
+const auth = require("../../auth/auth.service");
 const Helper = require("./user.helper");
 const { sendResponse, errReturned } = require("../../config/dto");
 const { SUCCESS, BADREQUEST, NOTFOUND } = require("../../config/ResponseCodes");
@@ -10,6 +11,76 @@ const {
   categories,
   notificationTypes,
 } = require("../../config/environment/const");
+
+/**
+ * 
+ Signup 
+ */
+exports.signup = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Perform validation and checks on email and password fields as needed
+
+    // Check if the user with the provided email already exists
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return sendResponse(res, BADREQUEST, "User with this email already exists");
+    }
+
+    // Create a new user with the provided email and password
+    const newUser = new User({ email, password });
+    const savedUser = await newUser.save();
+
+    // Generate a JWT for the newly signed-up user
+    const token = auth.signToken(savedUser._id, savedUser.role);
+
+    return sendResponse(res, SUCCESS, "User signed up successfully", {
+      token,
+      _id: savedUser._id,
+    });
+  } catch (error) {
+    errReturned(res, error);
+  }
+};
+
+/**
+ * 
+Login 
+ */
+
+// Login
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Perform validation and checks on email and password fields as needed
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return sendResponse(res, BADREQUEST, "User not found");
+    }
+
+    // Check if the provided password matches the stored password
+    if (!user.authenticate(password)) {
+      return sendResponse(res, BADREQUEST, "Incorrect password");
+    }
+
+    // Generate a JWT for the authenticated user
+    const token = auth.signToken(user._id, user.role);
+
+    return sendResponse(res, SUCCESS, "Login successful", {
+      token,
+      _id: user._id,
+    });
+  } catch (error) {
+    errReturned(res, error);
+  }
+};
+
 
 /**
  * Get Nonce

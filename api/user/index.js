@@ -8,6 +8,9 @@ const { s3Bucket } = require("../../config/environment");
 router.get("/getNonce/:publicAddress", controller.getNonce);
 router.post("/loginWithMetamask", controller.loginWithMetamask);
 
+router.post("/signup", controller.signup);
+router.get("/login", controller.login);
+
 router.get("/me", auth.isAuthenticated(), controller.myProfle);
 
 router.get(
